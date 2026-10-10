@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">BudSwipe</string>
+    <string name="accessibility_service_name">BudSwipe Reel Controller</string>
+    <string name="accessibility_service_description">BudSwipe uses gesture simulation to swipe vertical Reels in Instagram and Facebook when you tap your Bluetooth earbuds. No data is stored, read, or transmitted.</string>
+</resources>

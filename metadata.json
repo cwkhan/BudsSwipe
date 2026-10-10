@@ -1,0 +1,6 @@
+{
+  "name": "BudSwipe",
+  "description": "Navigate Instagram and Facebook Reels hands-free using Bluetooth earbud gestures and accessibility swipes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
