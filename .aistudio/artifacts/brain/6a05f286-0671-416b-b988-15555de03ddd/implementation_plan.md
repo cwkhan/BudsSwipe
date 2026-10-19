@@ -1,109 +1,87 @@
-# GitHub Actions CI Workflow Fix & Verification
+# Google Play Protect Warning Resolution & Release APK Rebuild
 
-Comprehensive fix and verification plan for the BudSwipe automated build pipeline in GitHub Actions, ensuring reliable execution on Ubuntu runners and successful publishing of the Debug APK.
+Resolution plan to fix the Google Play Protect block (*"This app can request access to sensitive data. This can increase the risk of identity theft or financial fraud"*) when sideloading the BudSwipe Release APK.
 
 ### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following operational choices were confirmed during the interactive clarification:
-> - **Artifact Scope**: The workflow will focus on compiling, verifying, and uploading the **Debug APK only** (`app/build/outputs/apk/debug/app-debug.apk`).
-> - **Gradle Runner Execution**: The pipeline will integrate the official **`gradle/actions/setup-gradle@v4`** action to handle Gradle environment provisioning, dependency caching, and build-cache optimization natively on GitHub runners.
+> The following choices were confirmed during interactive clarification:
+> - **Security Pruning**: Strip all potential keylogger and window-inspection flags (`canRequestFilterKeyEvents`, `flagRetrieveInteractiveWindows`, `typeWindowContentChanged`) from the accessibility configuration so the service is strictly a gesture simulation engine.
+> - **Artifact Output**: Build and place the optimized **Release APK only** in the `/apk` folder (`/apk/BudSwipe-release.apk` and `/apk/app-release.apk`).
+> - **Installation Guidance**: Provide complete instructions for bypassing Play Protect and enabling Android 13/14 restricted settings for sideloaded accessibility utilities.
 
-- **Confirmed Decision 1**: Build and publish `budswipe-debug-apk` on pushes and pull requests to `main` and `master`, plus manual triggers (`workflow_dispatch`).
-- **Confirmed Decision 2**: Provision Gradle through `gradle/actions/setup-gradle@v4` with version pinning (`gradle-version: 9.3.1` or wrapper resolution), eliminating runner dependency on system-installed Gradle.
-
----
-
-### 1. Overview & Core Concept
-
-- **What It Does**: Automates Android validation, running unit/Robolectric tests, compiling the Android application, and publishing the installable `app-debug.apk` as a downloadable GitHub Actions artifact on every push, pull request, or manual dispatch.
-- **Root Causes of Past Failure**:
-  1. **Missing `gradlew` wrapper script**: The workflow previously attempted `chmod +x gradlew || true`, but `gradlew` did not exist in the root directory.
-  2. **Unmet system Gradle dependency**: The workflow called `gradle testDebugUnitTest` and `gradle assembleDebug`, which fails on standard GitHub Ubuntu runners because `gradle` is not installed on the system PATH by default.
-  3. **Incomplete Caching Pipeline**: `actions/setup-java@v4` cache option was used alone without the specialized Gradle build cache integration provided by `gradle/actions/setup-gradle`.
-- **Target Value**: Zero-touch continuous integration delivering a verified APK artifact ready to install on Android devices.
+- **Confirmed Decision 1**: Prune invasive flags from `accessibility_service_config.xml` to minimize security risk triggers in Play Protect heuristics.
+- **Confirmed Decision 2**: Build and update the signed Release APK in `/apk` and provide clear steps to install smoothly on Android.
 
 ---
 
-### 2. User Experience & Visual Design (Developer Experience)
+### 1. Root Cause Analysis
 
-- **Workflow Triggering**:
-  - Automatically runs on branch pushes to `main` or `master`.
-  - Automatically runs on pull requests targeting `main` or `master`.
-  - Can be manually executed anytime via GitHub's "Run workflow" UI (`workflow_dispatch`).
-- **Execution Feedback & Telemetry**:
-  - Step 1: Source checkout (`actions/checkout@v4`).
-  - Step 2: JDK 17 setup (`actions/setup-java@v4` with Temurin distribution).
-  - Step 3: Gradle environment & cache setup (`gradle/actions/setup-gradle@v4`).
-  - Step 4: Unit & Robolectric test execution (`testDebugUnitTest`).
-  - Step 5: Debug APK assembly (`assembleDebug`).
-  - Step 6: Artifact upload (`actions/upload-artifact@v4` storing `app-debug.apk` under `budswipe-debug-apk`).
+- **Why Play Protect Blocked the APK**:
+  1. **Keystroke Interception Flag (`canRequestFilterKeyEvents="true"`)**: In Android security models, requesting permission to intercept all system key events is flagged by Google Play Protect as a high-risk capability associated with keyloggers and credential harvesters (*"risk of identity theft or financial fraud"*).
+  2. **Window Content Inspection (`flagRetrieveInteractiveWindows`)**: Indicated to the OS that the app could read on-screen text in banking or messaging apps.
+  3. **Why BudSwipe Doesn't Need These**:
+     - Earbud media key events are already captured cleanly through Android's standard **`MediaSession`** and **`MediaButtonReceiver`** APIs in `BudSwipeMediaSessionService`.
+     - The Accessibility Service only needs **`canPerformGestures="true"`** to execute vertical swipe gestures (`dispatchGesture()`) and **`typeWindowStateChanged`** to identify when Instagram or Facebook enters the foreground.
+  4. **Browser Sideloading Restrictions (Android 13/14+)**: Sideloading APKs declaring accessibility services directly through Chrome triggers automated fraud protection blocks unless installed via a file manager or with Play Protect temporarily paused.
 
 ---
 
-### 3. Key Product Decisions & Trade-Offs
-
-- **Decision 1: Use `gradle/actions/setup-gradle@v4` vs Relying on pre-installed runner binaries**
-  - *Chosen Approach*: Use `gradle/actions/setup-gradle@v4` paired with JDK 17.
-  - *Why*: Standard GitHub Actions `ubuntu-latest` virtual environments do not guarantee a pre-installed `gradle` binary matching AGP 9.1 / Gradle 9.3.1. `setup-gradle` downloads and configures the exact compatible Gradle version, handles build-cache keys, and logs build scans cleanly.
-  - *Alternatives Considered*: Writing a custom shell script to `apt-get install gradle` (unsupported for modern Gradle 9.3+ and AGP 9.1).
-
-- **Decision 2: Generate and commit standard `gradlew` wrapper scripts**
-  - *Chosen Approach*: Generate `gradlew` and `gradlew.bat` in the workspace root matching `gradle/wrapper/gradle-wrapper.properties` (Gradle 9.3.1).
-  - *Why*: Ensures local developers and CI environments can run `./gradlew` seamlessly without requiring manual Gradle installation on any machine.
-
----
-
-### 4. Technical Architecture & CI Pipeline
+### 2. User Experience & Verification Flow
 
 ```
-┌────────────────────────────────────────────────────────┐
-│               GitHub Actions Runner                    │
-│                  (ubuntu-latest)                       │
-└───────────────────────────┬────────────────────────────┘
-                            │
-                            ▼
-         ┌──────────────────────────────────────┐
-         │      1. actions/checkout@v4          │
-         └──────────────────┬───────────────────┘
-                            │
-                            ▼
-         ┌──────────────────────────────────────┐
-         │      2. actions/setup-java@v4        │
-         │         (JDK 17 Temurin)             │
-         └──────────────────┬───────────────────┘
-                            │
-                            ▼
-         ┌──────────────────────────────────────┐
-         │   3. gradle/actions/setup-gradle@v4  │
-         │   (Gradle 9.3.1 + Smart Caching)     │
-         └──────────────────┬───────────────────┘
-                            │
-                            ▼
-         ┌──────────────────────────────────────┐
-         │ 4. Unit & Robolectric Tests          │
-         │    (./gradlew testDebugUnitTest)     │
-         └──────────────────┬───────────────────┘
-                            │
-                            ▼
-         ┌──────────────────────────────────────┐
-         │ 5. Compile Debug APK                 │
-         │    (./gradlew assembleDebug)         │
-         └──────────────────┬───────────────────┘
-                            │
-                            ▼
-         ┌──────────────────────────────────────┐
-         │   6. actions/upload-artifact@v4      │
-         │      Output: app-debug.apk           │
-         └──────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                   Play Protect Mitigation Flow                   │
+└─────────────────────────────────┬────────────────────────────────┘
+                                  │
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ 1. Security Pruning in accessibility_service_config.xml│
+      │    - Keep: canPerformGestures="true"                   │
+      │    - Keep: typeWindowStateChanged                      │
+      │    - Remove: canRequestFilterKeyEvents                 │
+      │    - Remove: flagRetrieveInteractiveWindows            │
+      │    - Remove: typeWindowContentChanged                  │
+      └───────────────────────────┬────────────────────────────┘
+                                  │
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ 2. Rebuild Signed Release APK                          │
+      │    - gradle :app:assembleRelease                       │
+      │    - Copy updated binary to /apk/BudSwipe-release.apk  │
+      └───────────────────────────┬────────────────────────────┘
+                                  │
+                                  ▼
+      ┌────────────────────────────────────────────────────────┐
+      │ 3. User Installation Guide                             │
+      │    - Step A: Temporarily toggle Play Protect scanning   │
+      │    - Step B: Install APK via Files app or direct tap   │
+      │    - Step C: Enable "Allow restricted settings" in OS  │
+      └────────────────────────────────────────────────────────┘
 ```
 
-#### Step-by-Step Implementation Sequence:
-1. **Generate Gradle Wrapper**: Execute `gradle wrapper --gradle-version 9.3.1 --distribution-type bin` to create official `gradlew`, `gradlew.bat`, and `gradle/wrapper/gradle-wrapper.jar`.
-2. **Update Workflow File**: Rewrite `.github/workflows/build-apk.yml` with:
-   - Modern `actions/checkout@v4`
-   - `actions/setup-java@v4` (Java 17)
-   - `gradle/actions/setup-gradle@v4`
-   - Execution commands targeting `./gradlew testDebugUnitTest` and `./gradlew assembleDebug`
-   - `actions/upload-artifact@v4` targeting `app/build/outputs/apk/debug/app-debug.apk`
-3. **Local Pipeline Verification**: Run local test validation and assemble verification before committing changes.
+---
+
+### 3. Key Technical Decisions & Changes
+
+- **Decision 1: Streamline Accessibility Config to Minimum Privilege**
+  - *Target File*: `app/src/main/res/xml/accessibility_service_config.xml`
+  - *New Config*:
+    ```xml
+    <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+        android:description="@string/accessibility_service_description"
+        android:accessibilityEventTypes="typeWindowStateChanged"
+        android:accessibilityFeedbackType="feedbackGeneric"
+        android:notificationTimeout="100"
+        android:canPerformGestures="true"
+        android:accessibilityFlags="flagDefault" />
+    ```
+  - *Rationale*: Eliminates all sensitive permission flags that trigger the financial fraud warning while preserving 100% of gesture dispatch functionality.
+
+- **Decision 2: Clean Up `BudSwipeAccessibilityService.kt`**
+  - Retain `performSwipe()` and foreground package tracking.
+  - Simplify `onKeyEvent()` to default delegation since hardware media buttons are handled by `MediaSession`.
+
+- **Decision 3: Rebuild and Deliver Release APK**
+  - Execute `STORE_PASSWORD=android KEY_PASSWORD=android gradle :app:assembleRelease`.
+  - Copy new release APK to `/apk/BudSwipe-release.apk` and `/apk/app-release.apk`.

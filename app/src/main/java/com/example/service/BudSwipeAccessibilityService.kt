@@ -3,7 +3,6 @@ package com.example.service
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
-import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import com.example.engine.GestureDispatcher
 import com.example.model.SwipeAction
@@ -39,20 +38,6 @@ class BudSwipeAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {
         // Accessibility service interrupted
-    }
-
-    override fun onKeyEvent(event: KeyEvent?): Boolean {
-        if (event != null) {
-            val consumed = GestureDispatcher.onKeyEventReceived(
-                context = this,
-                event = event,
-                source = "AccessibilityService (Direct Hardware)"
-            )
-            if (consumed) {
-                return true
-            }
-        }
-        return super.onKeyEvent(event)
     }
 
     override fun onDestroy() {
