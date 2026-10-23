@@ -15,10 +15,10 @@ enum class SwipeAction(val label: String, val description: String) {
  * Speed presets for gesture execution.
  */
 enum class SwipeSpeedPreset(val label: String, val durationMs: Long, val distancePercent: Float) {
-    FAST("Fast Flick", 160L, 0.52f),
-    SMOOTH("Smooth Glide", 240L, 0.60f),
-    DEEP("Deep Scroll", 340L, 0.75f),
-    CUSTOM("Custom Settings", 240L, 0.60f)
+    FAST("Fast Flick", 150L, 0.55f),
+    SMOOTH("Smooth Glide", 200L, 0.62f),
+    DEEP("Deep Scroll", 320L, 0.75f),
+    CUSTOM("Custom Settings", 200L, 0.62f)
 }
 
 /**
@@ -34,14 +34,16 @@ enum class TargetApp(val label: String, val shortLabel: String, val packageNames
             "com.facebook.katana",
             "com.facebook.lite",
             "com.zhiliaoapp.musically",
-            "com.ss.android.ugc.trill"
+            "com.ss.android.ugc.trill",
+            "com.snapchat.android",
+            "com.budsweep.app"
         )
     ),
-    YOUTUBE("YouTube Shorts", "YouTube", listOf("com.google.android.youtube")),
-    INSTAGRAM("Instagram Reels", "Instagram", listOf("com.instagram.android")),
-    FACEBOOK("Facebook Reels", "Facebook", listOf("com.facebook.katana", "com.facebook.lite")),
-    TIKTOK("TikTok", "TikTok", listOf("com.zhiliaoapp.musically", "com.ss.android.ugc.trill")),
-    ANY("Any App (Test Mode)", "Any App", emptyList())
+    YOUTUBE("YouTube Shorts", "YouTube", listOf("com.google.android.youtube", "com.budsweep.app")),
+    INSTAGRAM("Instagram Reels", "Instagram", listOf("com.instagram.android", "com.budsweep.app")),
+    FACEBOOK("Facebook Reels", "Facebook", listOf("com.facebook.katana", "com.facebook.lite", "com.budsweep.app")),
+    TIKTOK("TikTok", "TikTok", listOf("com.zhiliaoapp.musically", "com.ss.android.ugc.trill", "com.budsweep.app")),
+    ANY("Universal (Any App)", "Universal", emptyList())
 }
 
 /**
@@ -75,17 +77,17 @@ data class MediaKeyEventRecord(
 data class BudSwipeSettings(
     val isServiceEnabled: Boolean = true,
     val targetApp: TargetApp = TargetApp.ALL_SHORTS,
-    val leftBudAction: SwipeAction = SwipeAction.SWIPE_UP, // Default: Left -> Next Reel
-    val rightBudAction: SwipeAction = SwipeAction.SWIPE_DOWN, // Default: Right -> Prev Reel
-    val leftTriggerKeyCode: Int = KeyEvent.KEYCODE_MEDIA_NEXT,
-    val rightTriggerKeyCode: Int = KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+    val leftBudAction: SwipeAction = SwipeAction.SWIPE_UP, // Default: Left -> Next Reel (Swipe UP)
+    val rightBudAction: SwipeAction = SwipeAction.SWIPE_DOWN, // Default: Right -> Prev Reel (Swipe DOWN)
+    val leftTriggerKeyCode: Int = KeyEvent.KEYCODE_MEDIA_PREVIOUS, // Standard Left Bud
+    val rightTriggerKeyCode: Int = KeyEvent.KEYCODE_MEDIA_NEXT, // Standard Right Bud
     val playPauseAction: SwipeAction = SwipeAction.SWIPE_UP, // Fallback for single-code buds
     val speedPreset: SwipeSpeedPreset = SwipeSpeedPreset.SMOOTH,
-    val swipeDistancePercent: Float = 0.60f, // 60% screen height
-    val swipeDurationMs: Long = 240L, // 240ms duration
-    val cooldownMs: Long = 700L, // 700ms cooldown to prevent double taps
+    val swipeDistancePercent: Float = 0.62f, // 62% screen height
+    val swipeDurationMs: Long = 200L, // 200ms crisp flick
+    val cooldownMs: Long = 450L, // 450ms human debounce
     val vibrationFeedback: Boolean = true,
-    val requireTargetAppForeground: Boolean = true,
+    val requireTargetAppForeground: Boolean = false, // Default false: Works everywhere out of the box!
     val darkTheme: Boolean = true
 )
 
@@ -98,7 +100,7 @@ data class DiagnosticState(
     val connectedDeviceName: String? = null,
     val isMediaSessionActive: Boolean = false,
     val currentForegroundApp: String = "None",
-    val isInTargetApp: Boolean = false,
+    val isInTargetApp: Boolean = true,
     val lastEvent: MediaKeyEventRecord? = null,
     val recentEvents: List<MediaKeyEventRecord> = emptyList(),
     val leftCalibratedKey: Int? = null,
@@ -108,3 +110,4 @@ data class DiagnosticState(
     val lastGestureStatus: String = "Idle",
     val totalSwipesDispatched: Int = 0
 )
+

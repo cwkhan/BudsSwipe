@@ -122,6 +122,87 @@ fun EarbudConfigScreen(
             }
         }
 
+        // Live Signal Reception Status Bar
+        item {
+            val last = diagnosticState.lastEvent
+            val isA11yOn = diagnosticState.isAccessibilityEnabled
+
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (last != null && last.wasHandledAsSwipe)
+                        SupabaseGreen.copy(alpha = 0.10f)
+                    else
+                        SupabaseSurface
+                ),
+                shape = RoundedCornerShape(10.dp),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (last != null && last.wasHandledAsSwipe) SupabaseGreen.copy(alpha = 0.4f) else SupabaseBorder
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(if (last != null) SupabaseGreen else CyanNeon)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "LIVE HARDWARE TAP MONITOR",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = if (last != null) SupabaseGreen else TextSecondary,
+                                fontSize = 10.sp
+                            )
+                        }
+
+                        Text(
+                            text = if (isA11yOn) "ENGINE READY" else "A11Y OFF",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isA11yOn) SupabaseGreen else AmberWarning,
+                            fontSize = 10.sp
+                        )
+                    }
+
+                    if (last != null) {
+                        Text(
+                            text = "Signal: ${last.keyCodeName} • Action: ${last.resultingAction?.label ?: "None"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = last.note,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = if (last.wasHandledAsSwipe) SupabaseGreen else TextMuted,
+                            fontSize = 11.sp
+                        )
+                    } else {
+                        Text(
+                            text = "Awaiting input • Tap your left or right earbud to test signal reception",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = TextMuted,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+        }
+
         // Left & Right Action Configuration
         item {
             Card(

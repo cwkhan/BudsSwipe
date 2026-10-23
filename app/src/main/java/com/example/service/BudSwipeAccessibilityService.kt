@@ -1,13 +1,21 @@
 package com.example.service
 
 import android.accessibilityservice.AccessibilityService
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.GestureDescription
+import android.content.Context
 import android.graphics.Path
+import android.os.Handler
+import android.os.Looper
+import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityManager
 import com.example.engine.GestureDispatcher
 import com.example.model.SwipeAction
 
 class BudSwipeAccessibilityService : AccessibilityService() {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     companion object {
         var instance: BudSwipeAccessibilityService? = null
@@ -15,11 +23,30 @@ class BudSwipeAccessibilityService : AccessibilityService() {
 
         val isRunning: Boolean
             get() = instance != null
+
+        fun isAccessibilityEnabledInSystem(context: Context): Boolean {
+            val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager ?: return false
+            val enabledServices = am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            return enabledServices.any {
+                it.resolveInfo.serviceInfo.packageName == context.packageName
+            }
+        }
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+
+        try {
+            val info = serviceInfo ?: AccessibilityServiceInfo()
+            info.eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or AccessibilityEvent.TYPE_WINDOWS_CHANGED
+            info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
+            info.flags = info.flags or AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
+            serviceInfo = info
+        } catch (_: Exception) {
+            // Handled
+        }
+
         GestureDispatcher.updateAccessibilityStatus(true)
     }
 
@@ -30,14 +57,60 @@ class BudSwipeAccessibilityService : AccessibilityService() {
             event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED
         ) {
             val pkg = event.packageName?.toString()
-            if (!pkg.isNullOrEmpty() && !pkg.contains("accessibility", ignoreCase = true)) {
+            if (!pkg.isNullOrEmpty() &&
+                !pkg.equals("android", ignoreCase = true) &&
+                !pkg.equals("com.android.systemui", ignoreCase = true) &&
+                !pkg.contains("accessibility", ignoreCase = true) &&
+                !pkg.contains("inputmethod", ignoreCase = true)
+            ) {
                 GestureDispatcher.updateForegroundPackage(pkg)
             }
         }
     }
 
+    /**
+     * Intercept hardware media keys and Bluetooth earbud events at the OS level.
+     */
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        val keyCode = event.keyCode
+
+        // List of keys we care about
+        val isMediaOrVolumeKey = when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_NEXT,
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+            KeyEvent.KEYCODE_HEADSETHOOK,
+            KeyEvent.KEYCODE_MEDIA_PLAY,
+            KeyEvent.KEYCODE_MEDIA_PAUSE,
+            KeyEvent.KEYCODE_MEDIA_FAST_FORWARD,
+            KeyEvent.KEYCODE_MEDIA_REWIND,
+            KeyEvent.KEYCODE_VOLUME_UP,
+            KeyEvent.KEYCODE_VOLUME_DOWN -> true
+            else -> {
+                // Also check if matches custom calibrated keys
+                val diag = GestureDispatcher.diagnosticState.value
+                keyCode == diag.leftCalibratedKey || keyCode == diag.rightCalibratedKey
+            }
+        }
+
+        if (isMediaOrVolumeKey) {
+            val handled = GestureDispatcher.onKeyEventReceived(
+                context = this,
+                event = event,
+                source = "AccessibilityService.onKeyEvent"
+            )
+
+            // If handled on ACTION_DOWN, or if it's the companion ACTION_UP, consume it
+            if (handled || (event.action == KeyEvent.ACTION_UP && isMediaOrVolumeKey)) {
+                return true
+            }
+        }
+
+        return super.onKeyEvent(event)
+    }
+
     override fun onInterrupt() {
-        // Accessibility service interrupted
+        // Interrupted by system
     }
 
     override fun onDestroy() {
@@ -69,21 +142,21 @@ class BudSwipeAccessibilityService : AccessibilityService() {
             return false
         }
 
-        val clampedDistance = distancePercent.coerceIn(0.20f, 0.85f)
-        val clampedDuration = durationMs.coerceIn(100L, 800L)
+        val clampedDistance = distancePercent.coerceIn(0.25f, 0.85f)
+        val clampedDuration = durationMs.coerceIn(120L, 500L)
 
-        // Middle X coordinate with slight jitter avoidance
-        val centerX = screenWidth * 0.5f
+        // Middle X coordinate with safe margin away from edges (50% center)
+        val centerX = screenWidth * 0.50f
 
         val startY: Float
         val endY: Float
 
         if (action == SwipeAction.SWIPE_UP) {
-            // Next Reel: finger starts lower and moves up
+            // Next Reel: finger starts at bottom/center (75% height) and moves UP to (25% height)
             startY = screenHeight * (0.5f + (clampedDistance * 0.5f))
             endY = screenHeight * (0.5f - (clampedDistance * 0.5f))
         } else {
-            // Previous Reel: finger starts higher and moves down
+            // Previous Reel: finger starts at top/center (25% height) and moves DOWN to (75% height)
             startY = screenHeight * (0.5f - (clampedDistance * 0.5f))
             endY = screenHeight * (0.5f + (clampedDistance * 0.5f))
         }
@@ -101,15 +174,16 @@ class BudSwipeAccessibilityService : AccessibilityService() {
             object : GestureResultCallback() {
                 override fun onCompleted(gestureDescription: GestureDescription?) {
                     super.onCompleted(gestureDescription)
-                    onResult(true)
+                    mainHandler.post { onResult(true) }
                 }
 
                 override fun onCancelled(gestureDescription: GestureDescription?) {
                     super.onCancelled(gestureDescription)
-                    onResult(false)
+                    mainHandler.post { onResult(false) }
                 }
             },
             null
         )
     }
 }
+

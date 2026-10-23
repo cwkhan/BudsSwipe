@@ -53,7 +53,7 @@ class ExampleRobolectricTest {
 
     @Test
     fun `target app filtering identifies Instagram YouTube and Facebook packages`() {
-        GestureDispatcher.updateSettings(BudSwipeSettings(targetApp = TargetApp.ALL_SHORTS))
+        GestureDispatcher.updateSettings(BudSwipeSettings(targetApp = TargetApp.ALL_SHORTS, requireTargetAppForeground = true))
 
         GestureDispatcher.updateForegroundPackage("com.instagram.android")
         assertTrue(GestureDispatcher.diagnosticState.value.isInTargetApp)

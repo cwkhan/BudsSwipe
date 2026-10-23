@@ -85,9 +85,9 @@ class SettingsRepository(private val context: Context) {
             speedPreset = speedPreset,
             swipeDistancePercent = preferences[PreferencesKeys.SWIPE_DISTANCE] ?: speedPreset.distancePercent,
             swipeDurationMs = preferences[PreferencesKeys.SWIPE_DURATION] ?: speedPreset.durationMs,
-            cooldownMs = preferences[PreferencesKeys.COOLDOWN_MS] ?: 700L,
+            cooldownMs = preferences[PreferencesKeys.COOLDOWN_MS] ?: 450L,
             vibrationFeedback = preferences[PreferencesKeys.VIBRATION] ?: true,
-            requireTargetAppForeground = preferences[PreferencesKeys.REQUIRE_FOREGROUND] ?: true,
+            requireTargetAppForeground = preferences[PreferencesKeys.REQUIRE_FOREGROUND] ?: false,
             darkTheme = preferences[PreferencesKeys.DARK_THEME] ?: true
         )
     }

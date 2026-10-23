@@ -28,7 +28,9 @@ object GestureDispatcher {
     private val _diagnosticState = MutableStateFlow(DiagnosticState())
     val diagnosticState: StateFlow<DiagnosticState> = _diagnosticState.asStateFlow()
 
-    private var currentSettings: BudSwipeSettings = BudSwipeSettings()
+    var currentSettings: BudSwipeSettings = BudSwipeSettings()
+        private set
+
     private var lastSwipeTime: Long = 0L
 
     // For calibration mode
@@ -53,8 +55,10 @@ object GestureDispatcher {
     }
 
     fun updateForegroundPackage(packageName: String) {
-        val inTarget = if (currentSettings.targetApp == TargetApp.ANY) {
+        val inTarget = if (!currentSettings.requireTargetAppForeground || currentSettings.targetApp == TargetApp.ANY) {
             true
+        } else if (packageName.contains("budsweep", ignoreCase = true) || packageName.contains("example", ignoreCase = true)) {
+            true // Always allow testing inside BudSwipe itself
         } else {
             currentSettings.targetApp.packageNames.any { pkg ->
                 packageName.equals(pkg, ignoreCase = true) ||
@@ -112,7 +116,7 @@ object GestureDispatcher {
             return false
         }
 
-        // Check if service is enabled
+        // Check if master switch is enabled
         if (!currentSettings.isServiceEnabled) {
             recordEvent(
                 keyCode = keyCode,
@@ -136,12 +140,12 @@ object GestureDispatcher {
                 sourceDevice = source,
                 wasHandled = false,
                 resultingAction = null,
-                note = "Debounced (Cooldown: ${currentSettings.cooldownMs - timeSinceLast}ms left)"
+                note = "Debounced (${currentSettings.cooldownMs - timeSinceLast}ms remaining)"
             )
             return false
         }
 
-        // Check foreground target app filter if required
+        // Check foreground target app filter only if explicitly enabled
         if (currentSettings.requireTargetAppForeground && !_diagnosticState.value.isInTargetApp) {
             recordEvent(
                 keyCode = keyCode,
@@ -171,7 +175,7 @@ object GestureDispatcher {
             return false
         }
 
-        // Check if Accessibility Service is bound and ready
+        // Check if Accessibility Service is running
         val serviceInstance = BudSwipeAccessibilityService.instance
         if (serviceInstance == null) {
             recordEvent(
@@ -181,7 +185,7 @@ object GestureDispatcher {
                 sourceDevice = source,
                 wasHandled = false,
                 resultingAction = swipeAction,
-                note = "Accessibility Service is not enabled in Android Settings!"
+                note = "Accessibility Service is OFF in Android Settings! Tap 'Enable' in app."
             )
             _diagnosticState.update { it.copy(lastGestureStatus = "Failed: Accessibility Service Disabled") }
             return false
@@ -196,7 +200,7 @@ object GestureDispatcher {
         ) { success ->
             _diagnosticState.update {
                 it.copy(
-                    lastGestureStatus = if (success) "Dispatched ${swipeAction.label}" else "Gesture Failed",
+                    lastGestureStatus = if (success) "Dispatched ${swipeAction.label}" else "Gesture Cancelled",
                     totalSwipesDispatched = if (success) it.totalSwipesDispatched + 1 else it.totalSwipesDispatched
                 )
             }
@@ -213,7 +217,7 @@ object GestureDispatcher {
                 sourceDevice = source,
                 wasHandled = true,
                 resultingAction = swipeAction,
-                note = "Success: Executed ${swipeAction.label}"
+                note = "Triggered ${swipeAction.label} ($keyName)"
             )
             return true
         } else {
@@ -224,7 +228,7 @@ object GestureDispatcher {
                 sourceDevice = source,
                 wasHandled = false,
                 resultingAction = swipeAction,
-                note = "Gesture dispatch failed in system"
+                note = "Gesture dispatch rejected by system"
             )
             return false
         }
@@ -234,31 +238,24 @@ object GestureDispatcher {
      * Resolves key code to configured SwipeAction.
      */
     fun resolveActionForKeyCode(keyCode: Int): SwipeAction {
+        // Direct match with custom mapped trigger keys
+        if (keyCode == currentSettings.leftTriggerKeyCode) {
+            return currentSettings.leftBudAction
+        }
+        if (keyCode == currentSettings.rightTriggerKeyCode) {
+            return currentSettings.rightBudAction
+        }
+
+        // Fallbacks for standard hardware and volume keys
         return when (keyCode) {
-            currentSettings.leftTriggerKeyCode -> currentSettings.leftBudAction
-            currentSettings.rightTriggerKeyCode -> currentSettings.rightBudAction
-            KeyEvent.KEYCODE_MEDIA_NEXT -> {
-                // Default fallback if not overridden
-                if (currentSettings.rightTriggerKeyCode == KeyEvent.KEYCODE_MEDIA_NEXT) {
-                    currentSettings.rightBudAction
-                } else {
-                    currentSettings.leftBudAction
-                }
-            }
-            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> {
-                // Default fallback if not overridden
-                if (currentSettings.leftTriggerKeyCode == KeyEvent.KEYCODE_MEDIA_PREVIOUS) {
-                    currentSettings.leftBudAction
-                } else {
-                    currentSettings.rightBudAction
-                }
-            }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> currentSettings.leftBudAction
+            KeyEvent.KEYCODE_MEDIA_NEXT -> currentSettings.rightBudAction
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
             KeyEvent.KEYCODE_HEADSETHOOK,
             KeyEvent.KEYCODE_MEDIA_PLAY,
-            KeyEvent.KEYCODE_MEDIA_PAUSE -> {
-                currentSettings.playPauseAction
-            }
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> currentSettings.playPauseAction
+            KeyEvent.KEYCODE_VOLUME_UP -> currentSettings.leftBudAction
+            KeyEvent.KEYCODE_VOLUME_DOWN -> currentSettings.rightBudAction
             else -> SwipeAction.NONE
         }
     }
@@ -288,7 +285,7 @@ object GestureDispatcher {
                         totalSwipesDispatched = it.totalSwipesDispatched + 1
                     )
                 }
-                onComplete(true, "${action.label} gesture completed successfully!")
+                onComplete(true, "${action.label} completed successfully!")
             } else {
                 onComplete(false, "Gesture was cancelled or rejected by system.")
             }
@@ -302,8 +299,9 @@ object GestureDispatcher {
     private fun handleCalibration(isLeft: Boolean, keyCode: Int, keyName: String) {
         if (isLeft) {
             isCalibratingLeft = false
-            val rightKey = _diagnosticState.value.rightCalibratedKey
-            val distinguishable = if (rightKey != null) rightKey != keyCode else null
+            currentSettings = currentSettings.copy(leftTriggerKeyCode = keyCode)
+            val rightKey = _diagnosticState.value.rightCalibratedKey ?: currentSettings.rightTriggerKeyCode
+            val distinguishable = rightKey != keyCode
             val msg = buildCalibrationAdvice(leftKey = keyCode, rightKey = rightKey)
 
             _diagnosticState.update {
@@ -315,8 +313,9 @@ object GestureDispatcher {
             }
         } else {
             isCalibratingRight = false
-            val leftKey = _diagnosticState.value.leftCalibratedKey
-            val distinguishable = if (leftKey != null) leftKey != keyCode else null
+            currentSettings = currentSettings.copy(rightTriggerKeyCode = keyCode)
+            val leftKey = _diagnosticState.value.leftCalibratedKey ?: currentSettings.leftTriggerKeyCode
+            val distinguishable = leftKey != keyCode
             val msg = buildCalibrationAdvice(leftKey = leftKey, rightKey = keyCode)
 
             _diagnosticState.update {
@@ -334,14 +333,18 @@ object GestureDispatcher {
             return "Tap the other earbud to complete calibration comparison."
         }
         return if (leftKey != rightKey) {
-            "Stereo separation detected! Left (${KeyEvent.keyCodeToString(leftKey)}) and Right (${KeyEvent.keyCodeToString(rightKey)}) send distinct signals. Full independent control is active."
+            "Stereo separation verified! Left (${KeyEvent.keyCodeToString(leftKey)}) and Right (${KeyEvent.keyCodeToString(rightKey)}) send distinct signals. Independent swiping is 100% active."
         } else {
             val keyStr = KeyEvent.keyCodeToString(leftKey)
-            "Notice: Both earbuds send the identical event ($keyStr). Android cannot distinguish which physical bud was tapped. Tip: In your earbud app (e.g. Realme Link), customize Left earbud to 'Previous Track' and Right earbud to 'Next Track' for independent swiping."
+            "Both earbuds output the identical keycode ($keyStr). Tip: In your earbud companion app (Realme Link / HeyMelody / Galaxy Wearable), customize Left earbud to 'Previous Track' and Right earbud to 'Next Track' for separate bi-directional swiping."
         }
     }
 
     fun clearCalibration() {
+        currentSettings = currentSettings.copy(
+            leftTriggerKeyCode = KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+            rightTriggerKeyCode = KeyEvent.KEYCODE_MEDIA_NEXT
+        )
         _diagnosticState.update {
             it.copy(
                 leftCalibratedKey = null,
@@ -404,3 +407,4 @@ object GestureDispatcher {
         }
     }
 }
+
