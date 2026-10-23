@@ -11,51 +11,51 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = CyanNeon,
-    onPrimary = Color(0xFF001A24),
-    primaryContainer = Color(0xFF00384D),
-    onPrimaryContainer = Color(0xFF99F6FF),
-    secondary = VioletElectric,
-    onSecondary = Color(0xFF2E004F),
-    secondaryContainer = Color(0xFF4C1D95),
-    onSecondaryContainer = Color(0xFFE9D5FF),
-    tertiary = PinkNeon,
+private val SupabaseDarkColorScheme = darkColorScheme(
+    primary = SupabaseGreen,
+    onPrimary = Color(0xFF042F1A),
+    primaryContainer = SupabaseGreenDark,
+    onPrimaryContainer = Color(0xFF6EE7B7),
+    secondary = CyanNeon,
+    onSecondary = Color(0xFF001A24),
+    secondaryContainer = Color(0xFF0C4A6E),
+    onSecondaryContainer = Color(0xFFBAE6FD),
+    tertiary = VioletElectric,
     onTertiary = Color.White,
-    background = DarkBackground,
-    onBackground = Color(0xFFF1F5F9),
-    surface = DarkSurface,
-    onSurface = Color(0xFFF1F5F9),
-    surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = Color(0xFF94A3B8),
-    surfaceContainer = DarkSurfaceContainer,
-    outline = DarkOutline
+    background = SupabaseBg,
+    onBackground = TextPrimary,
+    surface = SupabaseSurface,
+    onSurface = TextPrimary,
+    surfaceVariant = SupabaseSurfaceVariant,
+    onSurfaceVariant = TextSecondary,
+    surfaceContainer = SupabaseSurfaceContainer,
+    outline = SupabaseBorder
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = CyanDark,
+private val SupabaseLightColorScheme = lightColorScheme(
+    primary = SupabaseGreenHover,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFE0F7FA),
-    onPrimaryContainer = Color(0xFF00363A),
-    secondary = VioletDark,
+    primaryContainer = Color(0xFFD1FAE5),
+    onPrimaryContainer = Color(0xFF065F46),
+    secondary = BlueElectric,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFF3E8FF),
-    onSecondaryContainer = Color(0xFF3B0764),
-    tertiary = PinkNeon,
+    secondaryContainer = Color(0xFFDBEAFE),
+    onSecondaryContainer = Color(0xFF1E40AF),
+    tertiary = VioletElectric,
     onTertiary = Color.White,
     background = LightBackground,
-    onBackground = Color(0xFF0F172A),
+    onBackground = Color(0xFF111827),
     surface = LightSurface,
-    onSurface = Color(0xFF0F172A),
+    onSurface = Color(0xFF111827),
     surfaceVariant = LightSurfaceVariant,
-    onSurfaceVariant = Color(0xFF475569),
+    onSurfaceVariant = Color(0xFF4B5563),
     outline = LightOutline
 )
 
 @Composable
 fun BudSwipeTheme(
-    darkTheme: Boolean = true, // Default to sleek tech dark theme
-    dynamicColor: Boolean = false, // Keep BudSwipe's signature cyan/violet look
+    darkTheme: Boolean = true, // Default to sleek Supabase Dark aesthetic
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -63,8 +63,8 @@ fun BudSwipeTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
+        darkTheme -> SupabaseDarkColorScheme
+        else -> SupabaseLightColorScheme
     }
 
     MaterialTheme(

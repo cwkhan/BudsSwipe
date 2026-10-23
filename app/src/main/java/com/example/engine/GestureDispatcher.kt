@@ -53,12 +53,17 @@ object GestureDispatcher {
     }
 
     fun updateForegroundPackage(packageName: String) {
-        val inTarget = when (currentSettings.targetApp) {
-            TargetApp.ANY -> true
-            TargetApp.INSTAGRAM -> packageName.contains("instagram", ignoreCase = true)
-            TargetApp.FACEBOOK -> packageName.contains("facebook", ignoreCase = true)
-            TargetApp.BOTH -> packageName.contains("instagram", ignoreCase = true) ||
-                    packageName.contains("facebook", ignoreCase = true)
+        val inTarget = if (currentSettings.targetApp == TargetApp.ANY) {
+            true
+        } else {
+            currentSettings.targetApp.packageNames.any { pkg ->
+                packageName.equals(pkg, ignoreCase = true) ||
+                        packageName.contains(pkg, ignoreCase = true) ||
+                        (pkg.contains("youtube", ignoreCase = true) && packageName.contains("youtube", ignoreCase = true)) ||
+                        (pkg.contains("instagram", ignoreCase = true) && packageName.contains("instagram", ignoreCase = true)) ||
+                        (pkg.contains("facebook", ignoreCase = true) && packageName.contains("facebook", ignoreCase = true)) ||
+                        (pkg.contains("musically", ignoreCase = true) && (packageName.contains("musically", ignoreCase = true) || packageName.contains("tiktok", ignoreCase = true)))
+            }
         }
 
         _diagnosticState.update {

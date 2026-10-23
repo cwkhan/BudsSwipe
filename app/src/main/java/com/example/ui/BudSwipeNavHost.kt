@@ -117,6 +117,7 @@ fun BudSwipeMainApp(
                         bluetoothState = bluetoothState,
                         onToggleService = { ctx, enabled -> viewModel.toggleService(ctx, enabled) },
                         onSelectTargetApp = { viewModel.setTargetApp(it) },
+                        onSelectSpeedPreset = { viewModel.setSpeedPreset(it) },
                         onManualTestSwipe = { ctx, act, cb -> viewModel.performManualTestSwipe(ctx, act, cb) }
                     )
                 }
@@ -137,6 +138,7 @@ fun BudSwipeMainApp(
                 AppDestination.SWIPE -> {
                     SwipeSettingsScreen(
                         settings = settings,
+                        onSelectSpeedPreset = { viewModel.setSpeedPreset(it) },
                         onSetSwipeDistance = { viewModel.setSwipeDistance(it) },
                         onSetSwipeDuration = { viewModel.setSwipeDuration(it) },
                         onSetCooldown = { viewModel.setCooldown(it) },

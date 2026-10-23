@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -36,6 +38,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.model.BudSwipeSettings
+import com.example.model.SwipeSpeedPreset
 import com.example.ui.theme.CyanNeon
 import com.example.ui.theme.VioletElectric
 import kotlin.math.roundToInt
@@ -43,6 +46,7 @@ import kotlin.math.roundToInt
 @Composable
 fun SwipeSettingsScreen(
     settings: BudSwipeSettings,
+    onSelectSpeedPreset: (SwipeSpeedPreset) -> Unit,
     onSetSwipeDistance: (Float) -> Unit,
     onSetSwipeDuration: (Long) -> Unit,
     onSetCooldown: (Long) -> Unit,
@@ -66,16 +70,60 @@ fun SwipeSettingsScreen(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Fine-tune gesture distance, swipe speed, and debounce timing.",
+                text = "Fine-tune gesture distance, swipe speed, presets, and debounce timing.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        // Swipe Distance
+        // Speed Preset Cards
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Speed, contentDescription = null, tint = CyanNeon, modifier = Modifier.size(20.dp))
+                        Text(
+                            text = "  Preset Gesture Profiles",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Text(
+                        text = "Select a pre-configured speed & distance profile optimized for Reels & Shorts.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SwipeSpeedPreset.entries.forEach { preset ->
+                            val selected = settings.speedPreset == preset
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onSelectSpeedPreset(preset) },
+                                label = { Text(preset.label, style = MaterialTheme.typography.labelSmall) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = CyanNeon.copy(alpha = 0.25f),
+                                    selectedLabelColor = CyanNeon
+                                ),
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Swipe Distance
+        item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -124,7 +172,7 @@ fun SwipeSettingsScreen(
         // Swipe Duration
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -150,7 +198,7 @@ fun SwipeSettingsScreen(
                         )
                     }
                     Text(
-                        text = "Duration of the touch gesture. Lower ms produces faster flicks (ideal for Instagram / Facebook).",
+                        text = "Duration of the touch gesture. Lower ms produces faster flicks (ideal for Instagram / YouTube / Facebook).",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -173,7 +221,7 @@ fun SwipeSettingsScreen(
         // Gesture Cooldown (Debounce)
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -222,7 +270,7 @@ fun SwipeSettingsScreen(
         // Toggles Card (Vibration & App Gate)
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -258,7 +306,7 @@ fun SwipeSettingsScreen(
                             Icon(Icons.Default.Visibility, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             Column(modifier = Modifier.padding(start = 12.dp)) {
                                 Text("Foreground Lock", style = MaterialTheme.typography.titleSmall)
-                                Text("Only swipe when Instagram or Facebook is on screen", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("Only swipe when a supported platform is on screen", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                         Switch(

@@ -1,69 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-
-    <!-- Glowing motion swipe track (vertical) -->
-    <path
-        android:pathData="M54,24 L54,84"
-        android:strokeWidth="3"
-        android:strokeLineCap="round"
-        android:strokeColor="#3300E5FF" />
-
-    <!-- Top Upward Swipe Arrow (Next Reel indicator) -->
-    <path
-        android:pathData="M46,31 L54,23 L62,31"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round">
-        <aapt:attr name="android:strokeColor">
-            <gradient
-                android:startX="46"
-                android:startY="31"
-                android:endX="62"
-                android:endY="23"
-                android:type="linear">
-                <item android:color="#00E5FF" android:offset="0.0" />
-                <item android:color="#7000FF" android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
-
-    <!-- Bottom Downward Swipe Arrow (Previous Reel indicator) -->
-    <path
-        android:pathData="M46,77 L54,85 L62,77"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:strokeColor="#7000FF" />
-
-    <!-- Left Wireless Earbud Head & Stem -->
-    <!-- Head -->
-    <path
-        android:pathData="M39,44 C34,44 30,48 30,53 C30,57.5 33,61 37,62 L37,68 C37,70 38.5,71.5 40.5,71.5 C42.5,71.5 44,70 44,68 L44,53 C44,48 41.5,44 39,44 Z"
-        android:fillColor="#00E5FF" />
-    <!-- Touch sensor point on Left Earbud -->
-    <path
-        android:pathData="M39,52 A2.5,2.5 0 1,1 38.9,52 Z"
-        android:fillColor="#FFFFFF" />
-
-    <!-- Right Wireless Earbud Head & Stem -->
-    <!-- Head -->
-    <path
-        android:pathData="M69,44 C74,44 78,48 78,53 C78,57.5 75,61 71,62 L71,68 C71,70 69.5,71.5 67.5,71.5 C65.5,71.5 64,70 64,68 L64,53 C64,48 66.5,44 69,44 Z"
-        android:fillColor="#D946EF" />
-    <!-- Touch sensor point on Right Earbud -->
-    <path
-        android:pathData="M69,52 A2.5,2.5 0 1,1 68.9,52 Z"
-        android:fillColor="#FFFFFF" />
-
-    <!-- Sound/Gesture Wave Center Connector -->
-    <path
-        android:pathData="M48,53 C51,50 57,50 60,53"
-        android:strokeWidth="2.5"
-        android:strokeLineCap="round"
-        android:strokeColor="#AAFFFFFF" />
-</vector>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:width="72dp"
+        android:height="72dp"
+        android:drawable="@drawable/ic_budswipe_mark"
+        android:gravity="center" />
+</layer-list>

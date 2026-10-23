@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.model.BudSwipeSettings
 import com.example.model.SwipeAction
+import com.example.model.SwipeSpeedPreset
 import com.example.model.TargetApp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -28,6 +29,7 @@ class SettingsRepository(private val context: Context) {
         val LEFT_TRIGGER_KEY = intPreferencesKey("left_trigger_key")
         val RIGHT_TRIGGER_KEY = intPreferencesKey("right_trigger_key")
         val PLAY_PAUSE_ACTION = stringPreferencesKey("play_pause_action")
+        val SPEED_PRESET = stringPreferencesKey("speed_preset")
         val SWIPE_DISTANCE = floatPreferencesKey("swipe_distance")
         val SWIPE_DURATION = longPreferencesKey("swipe_duration")
         val COOLDOWN_MS = longPreferencesKey("cooldown_ms")
@@ -37,11 +39,14 @@ class SettingsRepository(private val context: Context) {
     }
 
     val settingsFlow: Flow<BudSwipeSettings> = context.dataStore.data.map { preferences ->
-        val targetAppString = preferences[PreferencesKeys.TARGET_APP] ?: TargetApp.BOTH.name
+        val targetAppString = preferences[PreferencesKeys.TARGET_APP] ?: TargetApp.ALL_SHORTS.name
         val targetApp = try {
-            TargetApp.valueOf(targetAppString)
+            when (targetAppString) {
+                "BOTH" -> TargetApp.ALL_SHORTS
+                else -> TargetApp.valueOf(targetAppString)
+            }
         } catch (_: Exception) {
-            TargetApp.BOTH
+            TargetApp.ALL_SHORTS
         }
 
         val leftAction = try {
@@ -62,6 +67,13 @@ class SettingsRepository(private val context: Context) {
             SwipeAction.SWIPE_UP
         }
 
+        val speedPresetString = preferences[PreferencesKeys.SPEED_PRESET] ?: SwipeSpeedPreset.SMOOTH.name
+        val speedPreset = try {
+            SwipeSpeedPreset.valueOf(speedPresetString)
+        } catch (_: Exception) {
+            SwipeSpeedPreset.SMOOTH
+        }
+
         BudSwipeSettings(
             isServiceEnabled = preferences[PreferencesKeys.SERVICE_ENABLED] ?: true,
             targetApp = targetApp,
@@ -70,8 +82,9 @@ class SettingsRepository(private val context: Context) {
             leftTriggerKeyCode = preferences[PreferencesKeys.LEFT_TRIGGER_KEY] ?: android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS,
             rightTriggerKeyCode = preferences[PreferencesKeys.RIGHT_TRIGGER_KEY] ?: android.view.KeyEvent.KEYCODE_MEDIA_NEXT,
             playPauseAction = playPauseAction,
-            swipeDistancePercent = preferences[PreferencesKeys.SWIPE_DISTANCE] ?: 0.55f,
-            swipeDurationMs = preferences[PreferencesKeys.SWIPE_DURATION] ?: 240L,
+            speedPreset = speedPreset,
+            swipeDistancePercent = preferences[PreferencesKeys.SWIPE_DISTANCE] ?: speedPreset.distancePercent,
+            swipeDurationMs = preferences[PreferencesKeys.SWIPE_DURATION] ?: speedPreset.durationMs,
             cooldownMs = preferences[PreferencesKeys.COOLDOWN_MS] ?: 700L,
             vibrationFeedback = preferences[PreferencesKeys.VIBRATION] ?: true,
             requireTargetAppForeground = preferences[PreferencesKeys.REQUIRE_FOREGROUND] ?: true,
@@ -88,6 +101,7 @@ class SettingsRepository(private val context: Context) {
             preferences[PreferencesKeys.LEFT_TRIGGER_KEY] = settings.leftTriggerKeyCode
             preferences[PreferencesKeys.RIGHT_TRIGGER_KEY] = settings.rightTriggerKeyCode
             preferences[PreferencesKeys.PLAY_PAUSE_ACTION] = settings.playPauseAction.name
+            preferences[PreferencesKeys.SPEED_PRESET] = settings.speedPreset.name
             preferences[PreferencesKeys.SWIPE_DISTANCE] = settings.swipeDistancePercent
             preferences[PreferencesKeys.SWIPE_DURATION] = settings.swipeDurationMs
             preferences[PreferencesKeys.COOLDOWN_MS] = settings.cooldownMs

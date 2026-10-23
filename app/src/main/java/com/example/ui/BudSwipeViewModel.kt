@@ -10,6 +10,7 @@ import com.example.engine.GestureDispatcher
 import com.example.model.BudSwipeSettings
 import com.example.model.DiagnosticState
 import com.example.model.SwipeAction
+import com.example.model.SwipeSpeedPreset
 import com.example.model.TargetApp
 import com.example.service.BudSwipeAccessibilityService
 import com.example.service.BudSwipeMediaSessionService
@@ -89,15 +90,41 @@ class BudSwipeViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun setSpeedPreset(preset: SwipeSpeedPreset) {
+        viewModelScope.launch {
+            if (preset == SwipeSpeedPreset.CUSTOM) {
+                repository.updateSettings(settings.value.copy(speedPreset = preset))
+            } else {
+                repository.updateSettings(
+                    settings.value.copy(
+                        speedPreset = preset,
+                        swipeDurationMs = preset.durationMs,
+                        swipeDistancePercent = preset.distancePercent
+                    )
+                )
+            }
+        }
+    }
+
     fun setSwipeDistance(percent: Float) {
         viewModelScope.launch {
-            repository.updateSettings(settings.value.copy(swipeDistancePercent = percent))
+            repository.updateSettings(
+                settings.value.copy(
+                    swipeDistancePercent = percent,
+                    speedPreset = SwipeSpeedPreset.CUSTOM
+                )
+            )
         }
     }
 
     fun setSwipeDuration(durationMs: Long) {
         viewModelScope.launch {
-            repository.updateSettings(settings.value.copy(swipeDurationMs = durationMs))
+            repository.updateSettings(
+                settings.value.copy(
+                    swipeDurationMs = durationMs,
+                    speedPreset = SwipeSpeedPreset.CUSTOM
+                )
+            )
         }
     }
 

@@ -14,11 +14,13 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
-    <!-- Package visibility declarations for target Reel apps -->
+    <!-- Package visibility declarations for target Reel & Short video apps -->
     <queries>
         <package android:name="com.instagram.android" />
         <package android:name="com.facebook.katana" />
         <package android:name="com.facebook.lite" />
+        <package android:name="com.google.android.youtube" />
+        <package android:name="com.zhiliaoapp.musically" />
     </queries>
 
     <application

@@ -3,7 +3,6 @@ package com.example.ui.screens
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,22 +22,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Accessibility
-import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -50,13 +50,21 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.engine.BluetoothMonitor
 import com.example.model.DiagnosticState
 import com.example.model.MediaKeyEventRecord
-import com.example.ui.theme.CyanNeon
-import com.example.ui.theme.GreenSuccess
 import com.example.ui.theme.PinkNeon
-import com.example.ui.theme.VioletElectric
+import com.example.ui.theme.SupabaseBg
+import com.example.ui.theme.SupabaseBorder
+import com.example.ui.theme.SupabaseBorderSubtle
+import com.example.ui.theme.SupabaseGreen
+import com.example.ui.theme.SupabaseSurface
+import com.example.ui.theme.SupabaseSurfaceContainer
+import com.example.ui.theme.SupabaseSurfaceVariant
+import com.example.ui.theme.TextMuted
+import com.example.ui.theme.TextPrimary
+import com.example.ui.theme.TextSecondary
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -75,62 +83,90 @@ fun DiagnosticsScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
+            .background(SupabaseBg)
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        // Header
         item {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Telemetry & Logs",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            color = SupabaseGreen.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(4.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseGreen.copy(alpha = 0.35f))
+                        ) {
+                            Text(
+                                text = "LIVE",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                                color = SupabaseGreen,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                     Text(
-                        text = "Diagnostics & Events",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Live telemetry of Bluetooth events and background services.",
+                        text = "Real-time hardware media key telemetry & engine logs.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = TextSecondary
                     )
                 }
 
                 OutlinedButton(
                     onClick = onRefreshStatus,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorder),
                     modifier = Modifier.testTag("refresh_diagnostics_button")
                 ) {
-                    Icon(Icons.Default.Refresh, contentDescription = "Refresh", modifier = Modifier.size(16.dp))
-                    Text(" Refresh", style = MaterialTheme.typography.labelSmall)
+                    Icon(Icons.Default.Refresh, contentDescription = "Refresh", tint = TextPrimary, modifier = Modifier.size(15.dp))
+                    Text(" Refresh", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, color = TextPrimary)
                 }
             }
         }
 
-        // Service Subsystem Health Cards
+        // Subsystems Health (Supabase Terminal Style)
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SupabaseSurface),
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Subsystem Health", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Subsystem Health Check",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        color = TextSecondary
+                    )
 
                     // Accessibility Engine
                     DiagnosticRow(
                         icon = Icons.Default.Accessibility,
-                        title = "Accessibility Swipe Engine",
-                        subtitle = if (diagnosticState.isAccessibilityEnabled) "Ready & Running (dispatchGesture active)" else "Disabled in Android Settings",
+                        title = "Accessibility Gesture Engine",
+                        subtitle = if (diagnosticState.isAccessibilityEnabled) "Ready & Running • dispatchGesture active" else "Disabled in Android Settings",
                         isHealthy = diagnosticState.isAccessibilityEnabled
                     )
 
                     // Bluetooth Profile
                     DiagnosticRow(
                         icon = Icons.Default.Bluetooth,
-                        title = "Bluetooth Audio Profile",
+                        title = "Bluetooth Audio Peripheral",
                         subtitle = bluetoothState.connectedDeviceName ?: "Disconnected",
                         isHealthy = bluetoothState.isConnected
                     )
@@ -138,8 +174,8 @@ fun DiagnosticsScreen(
                     // MediaSession Service
                     DiagnosticRow(
                         icon = Icons.Default.GraphicEq,
-                        title = "MediaSession Foreground Service",
-                        subtitle = if (diagnosticState.isMediaSessionActive) "Active (MediaButton focus held)" else "Inactive",
+                        title = "MediaSession Foreground Core",
+                        subtitle = if (diagnosticState.isMediaSessionActive) "Active • MediaButton focus held" else "Inactive",
                         isHealthy = diagnosticState.isMediaSessionActive
                     )
 
@@ -147,22 +183,29 @@ fun DiagnosticsScreen(
                     DiagnosticRow(
                         icon = Icons.Default.Smartphone,
                         title = "Foreground App Focus",
-                        subtitle = "${diagnosticState.currentForegroundApp} (${if (diagnosticState.isInTargetApp) "Target Active" else "Filtered"})",
+                        subtitle = "${diagnosticState.currentForegroundApp} (${if (diagnosticState.isInTargetApp) "In Target App" else "Filtered Out"})",
                         isHealthy = diagnosticState.isInTargetApp
                     )
                 }
             }
         }
 
-        // Quick Settings Shortcuts
+        // Quick System Shortcuts
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SupabaseSurface),
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Quick System Settings", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "System Shortcuts",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        color = TextSecondary
+                    )
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -172,20 +215,22 @@ fun DiagnosticsScreen(
                             onClick = {
                                 context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                             },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorder),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Accessibility", style = MaterialTheme.typography.labelSmall)
+                            Text("Accessibility", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, color = TextPrimary)
                         }
 
                         OutlinedButton(
                             onClick = {
                                 context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))
                             },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorder),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Bluetooth", style = MaterialTheme.typography.labelSmall)
+                            Text("Bluetooth", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, color = TextPrimary)
                         }
 
                         OutlinedButton(
@@ -199,17 +244,18 @@ fun DiagnosticsScreen(
                                     context.startActivity(Intent(Settings.ACTION_SETTINGS))
                                 }
                             },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorder),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("App Info", style = MaterialTheme.typography.labelSmall)
+                            Text("App Info", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, color = TextPrimary)
                         }
                     }
                 }
             }
         }
 
-        // Live Event Log Stream Header
+        // Live Event Log Stream
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -219,37 +265,41 @@ fun DiagnosticsScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(10.dp)
+                            .size(8.dp)
                             .clip(CircleShape)
-                            .background(CyanNeon)
+                            .background(SupabaseGreen)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Hardware Key Event Log",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
+                        text = "Event Stream (${diagnosticState.recentEvents.size})",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Monospace,
+                        color = TextSecondary
                     )
                 }
 
                 if (diagnosticState.recentEvents.isNotEmpty()) {
                     OutlinedButton(
                         onClick = onClearEvents,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorder),
                         modifier = Modifier.testTag("clear_events_button")
                     ) {
-                        Icon(Icons.Default.Clear, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Text(" Clear", style = MaterialTheme.typography.labelSmall)
+                        Icon(Icons.Default.Clear, contentDescription = null, tint = TextMuted, modifier = Modifier.size(13.dp))
+                        Text(" Clear", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace, color = TextMuted)
                     }
                 }
             }
         }
 
-        // Live Event Log List
+        // Empty state or event items
         if (diagnosticState.recentEvents.isEmpty()) {
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                    colors = CardDefaults.cardColors(containerColor = SupabaseSurfaceVariant),
                     shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorderSubtle),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -259,21 +309,23 @@ fun DiagnosticsScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            imageVector = Icons.Default.GraphicEq,
+                            imageVector = Icons.Default.Terminal,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(36.dp)
+                            tint = TextMuted,
+                            modifier = Modifier.size(32.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "No media events received yet",
+                            text = "Awaiting hardware media keys...",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Medium,
+                            color = TextSecondary
                         )
                         Text(
-                            text = "Tap your Bluetooth earbud or test button to see live telemetry.",
+                            text = "Tap your Bluetooth earbuds to stream raw key telemetry.",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = TextMuted
                         )
                     }
                 }
@@ -287,23 +339,24 @@ fun DiagnosticsScreen(
         // Troubleshooting Guide
         item {
             Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = SupabaseSurface),
+                shape = RoundedCornerShape(12.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, SupabaseBorder),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.HelpOutline, contentDescription = null, tint = CyanNeon, modifier = Modifier.size(20.dp))
+                        Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = null, tint = SupabaseGreen, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Troubleshooting Guide", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                        Text("Troubleshooting Guide", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = TextPrimary)
                     }
 
                     Text(
-                        text = "• Event not received? Another music app (like Spotify) may be hogging media button focus. Close running audio apps or press play/pause once in BudSwipe to reclaim focus.\n\n" +
-                                "• Swipe not happening? Verify that BudSwipe Reel Controller is toggled ON under Android Accessibility Settings.\n\n" +
-                                "• App stops swiping after 10 minutes? Disable Android Battery Optimization for BudSwipe so Android OS does not pause background monitoring.",
+                        text = "• Event not received? Another media app (e.g. Spotify) might be holding audio focus. Turn BudSwipe off and on once to reclaim focus.\n\n" +
+                                "• Gestures not firing? Ensure BudSwipe Reel Controller is enabled in Android Accessibility Settings.\n\n" +
+                                "• Android 13/14 Restricted Settings? If accessibility is grayed out, open Settings > Apps > BudSwipe > 3 dots > 'Allow restricted settings'.",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = TextSecondary
                     )
                 }
             }
@@ -325,32 +378,33 @@ private fun DiagnosticRow(
     ) {
         Box(
             modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(if (isHealthy) GreenSuccess.copy(alpha = 0.15f) else PinkNeon.copy(alpha = 0.15f)),
+                .size(34.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isHealthy) SupabaseGreen.copy(alpha = 0.12f) else PinkNeon.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (isHealthy) GreenSuccess else PinkNeon,
+                tint = if (isHealthy) SupabaseGreen else PinkNeon,
                 modifier = Modifier.size(18.dp)
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = TextPrimary)
             Text(
                 subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isHealthy) MaterialTheme.colorScheme.onSurfaceVariant else PinkNeon
+                fontFamily = FontFamily.Monospace,
+                color = if (isHealthy) TextSecondary else PinkNeon
             )
         }
         Icon(
             imageVector = if (isHealthy) Icons.Default.CheckCircle else Icons.Default.Error,
             contentDescription = null,
-            tint = if (isHealthy) GreenSuccess else PinkNeon,
-            modifier = Modifier.size(20.dp)
+            tint = if (isHealthy) SupabaseGreen else PinkNeon,
+            modifier = Modifier.size(18.dp)
         )
     }
 }
@@ -360,18 +414,14 @@ private fun EventRecordCard(
     record: MediaKeyEventRecord,
     timeStr: String
 ) {
-    val statusColor = if (record.wasHandledAsSwipe) GreenSuccess else MaterialTheme.colorScheme.onSurfaceVariant
-
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        shape = RoundedCornerShape(12.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(
-                1.dp,
-                if (record.wasHandledAsSwipe) GreenSuccess.copy(alpha = 0.3f) else Color.Transparent,
-                RoundedCornerShape(12.dp)
-            )
+        colors = CardDefaults.cardColors(containerColor = SupabaseSurface),
+        shape = RoundedCornerShape(10.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (record.wasHandledAsSwipe) SupabaseGreen.copy(alpha = 0.35f) else SupabaseBorderSubtle
+        ),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Row(
@@ -385,20 +435,21 @@ private fun EventRecordCard(
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace,
-                        color = if (record.wasHandledAsSwipe) CyanNeon else MaterialTheme.colorScheme.onSurface
+                        color = if (record.wasHandledAsSwipe) SupabaseGreen else TextPrimary
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "(${record.keyCode})",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        fontFamily = FontFamily.Monospace,
+                        color = TextMuted
                     )
                 }
 
                 Text(
                     text = timeStr,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = TextMuted,
                     fontFamily = FontFamily.Monospace
                 )
             }
@@ -412,15 +463,18 @@ private fun EventRecordCard(
                 Text(
                     text = "${record.actionType} • ${record.sourceDevice}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 11.sp,
+                    color = TextSecondary
                 )
 
                 if (record.resultingAction != null) {
                     Text(
-                        text = record.resultingAction.label,
+                        text = "➔ ${record.resultingAction.label}",
                         style = MaterialTheme.typography.labelSmall,
+                        fontFamily = FontFamily.Monospace,
                         fontWeight = FontWeight.Bold,
-                        color = CyanNeon
+                        color = SupabaseGreen
                     )
                 }
             }
@@ -430,7 +484,9 @@ private fun EventRecordCard(
                 Text(
                     text = record.note,
                     style = MaterialTheme.typography.bodySmall,
-                    color = statusColor
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 11.sp,
+                    color = if (record.wasHandledAsSwipe) SupabaseGreen else TextMuted
                 )
             }
         }
